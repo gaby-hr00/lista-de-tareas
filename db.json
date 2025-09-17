@@ -1,0 +1,28 @@
+{
+  "usuarios": [
+    {
+      "id": "74cf",
+      "nombre": "Valen",
+      "email": "valen@gmail.com",
+      "password": "$2b$10$mmjJhUhpeSvKy5strH8fcexwhonwQ4d2YxYvdxw/zjdJlFfVzR4du"
+    },
+    {
+      "id": "9f5e",
+      "nombre": "Valen Sierra",
+      "email": "sanchez@gmail.com",
+      "password": "$2b$10$dPvy9qiDoublluaF9eCDiOOeb9Q0xBtD9EFXDB/vj2ORCgHNrJvv6"
+    },
+    {
+      "id": "86fc",
+      "nombre": "Camilo",
+      "email": "camilo@gmail.com",
+      "password": "$2b$10$Jb33jSBMtKTxLzXWxh9JAezQoWxI0VwQ/BLZ1T1fCXrFIZKTz0zHW"
+    },
+    {
+      "id": "9755",
+      "nombre": "Gaby",
+      "email": "gabyh0541@gmail.com",
+      "password": "$2b$10$M7Lh23SSkdSmPjopn4iBLOSlD.ogKiKYib0hqtL5fIKOBDJbs0Npy"
+    }
+  ]
+}
