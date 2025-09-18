@@ -33,7 +33,7 @@ export default function Login() {
       if (match) {
         setMensaje("✅ Inicio de sesión exitoso");
         localStorage.setItem("usuarioLogueado", JSON.stringify({ id: user.id, nombre: user.nombre, email: user.email }));
-        setTimeout(() => navigate("/list"), 800);
+        setTimeout(() => navigate("/list"), 100);
       } else { // si no coinciden los datos
         setMensaje("❌ Credenciales incorrectas");
       }
@@ -46,13 +46,13 @@ export default function Login() {
     // Render
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-lg w-96">
+      <form onSubmit={handleSubmit} className="bg-pink-200 p-6 rounded-2xl shadow-lg w-96">
         <h2 className="text-2xl font-bold mb-4 text-center">Iniciar Sesión</h2>
 
-        <input type="email" placeholder="Correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 mb-3 border rounded" required />
-        <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 mb-3 border rounded" required />
+        <input type="email" placeholder="Correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 mb-3 border rounded bg-white" required />
+        <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 mb-3 border rounded bg-white" required />
 
-        <button type="submit" className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 transition">Iniciar Sesión</button>
+        <button type="submit" className="w-full bg-violet-500 text-white p-2 rounded hover:bg-purple-800 transition">Iniciar Sesión</button>
 
         {/* Mensaje de respuesta */}
         {mensaje && <p className="mt-3 text-center font-semibold">{mensaje}</p>}

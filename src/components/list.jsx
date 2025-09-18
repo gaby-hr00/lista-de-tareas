@@ -129,20 +129,16 @@ export default function List() {
 
     // Render
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 rounded shadow bg-gray-300">
+    <div className="max-w-md mx-auto mt-10 p-4 rounded shadow bg-pink-200">
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-2xl font-bold">LISTA DE TAREAS</h1>
         <button
           onClick={cerrarSesion}
-          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+          className="bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 transition"
         >
           Cerrar Sesión
         </button>
       </div>
-
-      <p className="mb-4 text-sm text-gray-700">
-        Usuario: <span className="font-semibold">{usuarioEmail}</span>
-      </p>
 
       {/* Buscador */}
       <div className="mb-5 flex relative">
@@ -218,7 +214,7 @@ export default function List() {
         </select>
 
         <button
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+          className="w-full bg-violet-500 text-white py-2 rounded-full hover:bg-blue-600 transition"
           onClick={agregarTarea}
         >
           Añadir Tarea

@@ -23,6 +23,12 @@
       "nombre": "Gaby",
       "email": "gabyh0541@gmail.com",
       "password": "$2b$10$M7Lh23SSkdSmPjopn4iBLOSlD.ogKiKYib0hqtL5fIKOBDJbs0Npy"
+    },
+    {
+      "id": "4b81",
+      "nombre": "Paola",
+      "email": "navarro26paola@gmail.com",
+      "password": "$2b$10$MjeEObkeepHiJQloTGsYp.oDfzdttAQz2AiJi1qQbV1doI8X0YXza"
     }
   ]
 }
