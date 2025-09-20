@@ -4,9 +4,12 @@ import Registro from "./components/registro";
 import Login from "./components/login";
 import Dashboard from "./components/list";
 import List from "./components/list";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   return (
+    <>
     <Router>
       <Routes>
         <Route path="/" element={<Navigate to="/registro" />} />
@@ -15,6 +18,8 @@ function App() {
         <Route path="/list" element={<List />} />
       </Routes>
     </Router>
+    <ToastContainer position="top-right" autoClose={3000} />
+    </>
   );
 }
 

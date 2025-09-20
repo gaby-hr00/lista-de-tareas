@@ -1,242 +1,203 @@
-import TodoItem from "./TodoItem";
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
+import TaskForm from "./form";
+import Buscador from "./search.jsx";
+import FiltrosTareas from "./Filters.jsx";
+import TodoItem from "./TodoItem";
+import Pagination from "./pagination.jsx";
 
 export default function List() {
-    // Obtener usuario logueado
+
   const navigate = useNavigate();
   const usuario = JSON.parse(localStorage.getItem("usuarioLogueado"));
-  const usuarioEmail = usuario?.email; //  email como identificador único
 
   // Estados
   const [tareas, setTareas] = useState([]);
-  const [titulo, setTitulo] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [prioridad, setPrioridad] = useState("media");
-  const [estado, setEstado] = useState("pendiente");
+  const [busqueda, setBusqueda] = useState("");
+  const [loadingBusqueda, setLoadingBusqueda] = useState(false);
 
   // Filtros
   const [filtroEstado, setFiltroEstado] = useState("todas");
   const [filtroPrioridad, setFiltroPrioridad] = useState("todas");
-  const [busqueda, setBusqueda] = useState("");
 
-  // Clave única para cada usuario
-  const storageKey = `tareas_${usuarioEmail}`;
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const tareasPorPagina = 4;
 
-  // Redirigir si no hay usuario logueado
+  // Cargar tareas desde json-server
   useEffect(() => {
-    if (!usuarioEmail) {
+    if (!usuario) {
       navigate("/login");
+      return;
     }
-  }, [usuarioEmail, navigate]);
 
-  // Cargar tareas
+    fetch("http://localhost:5000/tareas")
+      .then((res) => res.json())
+      .then((data) => setTareas(data))
+      .catch((err) => console.error("Error cargando tareas:", err));
+  }, [usuario, navigate]);
+
+  // Simular delay para búsqueda
   useEffect(() => {
-    if (usuarioEmail) {
-      const tareasGuardadas = localStorage.getItem(storageKey);
-      if (tareasGuardadas) {
-        setTareas(JSON.parse(tareasGuardadas));
-      }
-    }
-  }, [storageKey, usuarioEmail]);
+    if (busqueda === "") return;
+    setLoadingBusqueda(true);
+    const timer = setTimeout(() => setLoadingBusqueda(false), 500);
+    return () => clearTimeout(timer);
+  }, [busqueda]);
 
-  // Guardar tareas 
-  useEffect(() => {
-    if (usuarioEmail) {
-      localStorage.setItem(storageKey, JSON.stringify(tareas));
-    }
-  }, [tareas, storageKey, usuarioEmail]);
-
-  // Agregar tarea
-  const agregarTarea = () => {
-    if (titulo.trim()) {
-      setTareas([
-        ...tareas,
-        {
-          id: Date.now(),
-          titulo,
-          descripcion,
-          prioridad,
-          estado,
-          estadoAnterior: "",
-          completed: false,
-        },
-      ]);
-
-      setTitulo("");
-      setDescripcion("");
-      setPrioridad("media");
-      setEstado("pendiente");
+  // --- FUNCIONES CRUD ---
+  const agregarTarea = async (tarea) => {
+    try {
+      const res = await fetch("http://localhost:5000/tareas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...tarea,
+          fechaCreacion: new Date().toISOString(),
+        }),
+      });
+      const tareaGuardada = await res.json();
+      setTareas([...tareas, tareaGuardada]);
+      toast.success("Tarea agregada con éxito");//alerta toastify
+    } catch (err) {
+      console.error("Error agregando tarea:", err);
     }
   };
 
-  // Marcar/desmarcar tarea
-  const toggleCompleted = (id) => {
-    setTareas(
-      tareas.map((tarea) =>
-        tarea.id === id
-          ? !tarea.completed
-            ? {
-                ...tarea,
-                completed: true,
-                estadoAnterior: tarea.estado,
-                estado: "completado",
-              }
-            : {
-                ...tarea,
-                completed: false,
-                estado: tarea.estadoAnterior || "pendiente",
-                estadoAnterior: "",
-              }
-          : tarea
-      )
-    );
+  const editarTarea = async (id, nuevosDatos) => {
+    try {
+      const res = await fetch(`http://localhost:5000/tareas/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...nuevosDatos,
+          ultimoEditor: usuario?.nombre || usuario?.email,
+          fechaEdicion: new Date().toISOString(),
+        }),
+      });
+      const tareaActualizada = await res.json();
+      setTareas(tareas.map((t) => (t.id === id ? tareaActualizada : t)));
+      toast.info("✏️ Tarea editada con éxito");//alerta toastify
+    } catch (err) {
+      console.error("Error editando tarea:", err);
+    }
   };
 
-  // Eliminar tarea
-  const eliminarTarea = (id) => {
-    setTareas(tareas.filter((tarea) => tarea.id !== id));
+  const toggleCompleted = async (id) => {
+    const tarea = tareas.find((t) => t.id === id);
+    if (!tarea) return;
+
+    const tareaActualizada = {
+      ...tarea,
+      completed: !tarea.completed,
+      estado: tarea.completed ? tarea.estadoAnterior || "pendiente" : "completado",
+      estadoAnterior: tarea.completed ? "" : tarea.estado,
+    };
+
+    try {
+      const res = await fetch(`http://localhost:5000/tareas/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tareaActualizada),
+      });
+      const tareaGuardada = await res.json();
+      setTareas(tareas.map((t) => (t.id === id ? tareaGuardada : t)));
+    } catch (err) {
+      console.error("Error actualizando completado:", err);
+    }
   };
 
-  // Editar tarea
-  const editarTarea = (id, nuevosDatos) => {
-    setTareas(
-      tareas.map((tarea) =>
-        tarea.id === id ? { ...tarea, ...nuevosDatos } : tarea
-      )
-    );
+  const eliminarTarea = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/tareas/${id}`, { method: "DELETE" });
+      setTareas(tareas.filter((t) => t.id !== id));
+      toast.info("❌ Tarea eliminada con éxito");//alerta toastify
+    } catch (err) {
+      console.error("Error eliminando tarea:", err);
+    }
   };
 
-  // Filtrar tareas
-  const tareasFiltradas = tareas.filter((tarea) => {
-    const filtroEstadoOk =
-      filtroEstado === "todas" || tarea.estado === filtroEstado;
-    const filtroPrioridadOk =
-      filtroPrioridad === "todas" || tarea.prioridad === filtroPrioridad;
-    const filtroBusquedaOk =
-      tarea.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
-      tarea.descripcion.toLowerCase().includes(busqueda.toLowerCase());
-
-    return filtroEstadoOk && filtroPrioridadOk && filtroBusquedaOk;
-  });
-
-  // cerrar sesión
   const cerrarSesion = () => {
     localStorage.removeItem("usuarioLogueado");
     navigate("/registro");
   };
 
-    // Render
+  // --- FILTRADO Y PAGINACIÓN ---
+  const tareasFiltradas = tareas.filter((t) => {
+    const estadoOk = filtroEstado === "todas" || t.estado === filtroEstado;
+    const prioridadOk = filtroPrioridad === "todas" || t.prioridad === filtroPrioridad;
+    const busquedaOk =
+      t.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+      t.descripcion.toLowerCase().includes(busqueda.toLowerCase());
+    return estadoOk && prioridadOk && busquedaOk;
+  });
+
+  const indexOfLast = currentPage * tareasPorPagina;
+  const indexOfFirst = indexOfLast - tareasPorPagina;
+  const tareasPagina = tareasFiltradas.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(tareasFiltradas.length / tareasPorPagina);
+
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 rounded shadow bg-pink-200">
-      <div className="flex justify-between items-center mb-5">
-        <h1 className="text-2xl font-bold">LISTA DE TAREAS</h1>
-        <button
-          onClick={cerrarSesion}
-          className="bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 transition"
-        >
-          Cerrar Sesión
-        </button>
-      </div>
-
-      {/* Buscador */}
-      <div className="mb-5 flex relative">
-        <Search className="absolute mt-2 ml-2 text-gray-400" />
-        <input
-          className="w-full p-2 pl-8 border rounded-full bg-white"
-          type="text"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por título o descripción..."
-        />
-      </div>
-      {/* Filtros */}
-      <div className="flex gap-2 mb-5 ">
-        <select
-          className="flex-1 p-2 border rounded bg-white"
-          value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
-        >
-          <option value="todas">Todos los estados</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="en progreso">En Progreso</option>
-          <option value="completado">Completado</option>
-        </select>
-
-        <select
-          className="flex-1 p-2 border rounded bg-white"
-          value={filtroPrioridad}
-          onChange={(e) => setFiltroPrioridad(e.target.value)}
-        >
-          <option value="todas">Todas las prioridades</option>
-          <option value="alta">Alta</option>
-          <option value="media">Media</option>
-          <option value="baja">Baja</option>
-        </select>
-      </div>
-
-      {/* Formulario para añadir tarea */}
-      <div className="space-y-3 mb-5">
-        <input
-          className="w-full p-2 border rounded bg-white"
-          type="text"
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Título de la tarea"
-        />
-
-        <textarea
-          className="w-full p-2 border rounded bg-white"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          placeholder="Descripción de la tarea"
-        />
-
-        <select
-          className="w-full p-2 border rounded bg-white"
-          value={prioridad}
-          onChange={(e) => setPrioridad(e.target.value)}
-        >
-          <option value="alta">Alta</option>
-          <option value="media">Media</option>
-          <option value="baja">Baja</option>
-        </select>
-
-        <select
-          className="w-full p-2 border rounded bg-white"
-          value={estado}
-          onChange={(e) => setEstado(e.target.value)}
-        >
-          <option value="pendiente">Pendiente</option>
-          <option value="en progreso">En Progreso</option>
-          <option value="completado">Completado</option>
-        </select>
-
-        <button
-          className="w-full bg-violet-500 text-white py-2 rounded-full hover:bg-blue-600 transition"
-          onClick={agregarTarea}
-        >
-          Añadir Tarea
-        </button>
-      </div>
-
-      {/* Lista de tareas filtradas */}
-      <div className="space-y-2">
-        {tareasFiltradas.length > 0 ? (
-          tareasFiltradas.map((tarea) => (
-            <TodoItem
-              key={tarea.id}
-              tarea={tarea}
-              toggleCompleted={toggleCompleted}
-              eliminarTarea={eliminarTarea}
-              editarTarea={editarTarea}
+    <div className="max-w-6xl mx-auto mt-2 p-6 rounded shadow bg-pink-200">
+      {/* HEADER: Buscador + Filtros + Cerrar Sesión */}
+      <div className="mb-10">
+        <h1 className="text-2xl font-bold mb-6 text-center">LISTA DE TAREAS</h1>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-6">
+          <div className="w-full md:flex-1 md:max-w-[600px]">
+            <Buscador busqueda={busqueda} setBusqueda={setBusqueda} loading={loadingBusqueda} />
+          </div>
+          <div className="flex gap-4 flex-shrink-0">
+            <FiltrosTareas
+              filtroEstado={filtroEstado}
+              setFiltroEstado={setFiltroEstado}
+              filtroPrioridad={filtroPrioridad}
+              setFiltroPrioridad={setFiltroPrioridad}
             />
-          ))
-        ) : (
-          <p className="text-center text-gray-500">No hay tareas</p>
-        )}
+          </div>
+          <button
+            onClick={cerrarSesion}
+            className="bg-violet-500 text-white px-4 py-2 rounded-full hover:bg-purple-900 transition whitespace-nowrap mt-[-15px]"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
+
+      {/* MAIN: Formulario + Lista de tareas */}
+      <main className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
+        <TaskForm agregarTarea={agregarTarea} usuario={usuario} />
+
+        <div className="max-w-2xl -ml-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tareasPagina.length > 0 ? (
+              tareasPagina.map((tarea) => (
+                <TodoItem
+                  key={tarea.id}
+                  tarea={tarea}
+                  toggleCompleted={toggleCompleted}
+                  eliminarTarea={eliminarTarea}
+                  editarTarea={editarTarea}
+                />
+              ))
+            ) : (
+              <p className="text-center text-gray-500 col-span-2">No hay tareas</p>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* PAGINACIÓN */}
+      {totalPages > 1 && (
+        <footer className="mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
+        </footer>
+      )}
     </div>
   );
 }
